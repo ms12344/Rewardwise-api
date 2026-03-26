@@ -1,62 +1,108 @@
 package com.rewardwise.api.service;
 
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.mockito.junit.jupiter.MockitoExtension;
-
+import com.rewardwise.api.config.RewardProperties;
 import com.rewardwise.api.dto.RewardResponse;
-import com.rewardwise.api.model.Transaction;
-import com.rewardwise.api.service.RewardService;
+import com.rewardwise.api.entity.TransactionEntity;
+import com.rewardwise.api.repository.TransactionRepository;
+import com.rewardwise.api.service.impl.RewardServiceImpl;
 import com.rewardwise.api.util.RewardCalculatorUtil;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-@ExtendWith(MockitoExtension.class)
-class RewardServiceTest {
-    @InjectMocks
-    private RewardService service;
-    @Mock
-    private RewardCalculatorUtil rewardCalculatorUtil;
-    @Test
-    void testMultipleCustomersAndMonths() {
+import static org.mockito.Mockito.*;
 
-        List<Transaction> transactions = List.of(
+/**
+ * Unit test for RewardServiceImpl
+ */
+class RewardServiceTest {
+
+    private RewardServiceImpl service;
+    private TransactionRepository repository;
+
+    @BeforeEach
+    void setup() {
+
+        // ✅ Mock repository
+        repository = mock(TransactionRepository.class);
+
+        // ✅ Mock properties
+        RewardProperties props = mock(RewardProperties.class);
+        when(props.getFirstThreshold()).thenReturn(50);
+        when(props.getSecondThreshold()).thenReturn(100);
+        when(props.getFirstMultiplier()).thenReturn(1);
+        when(props.getSecondMultiplier()).thenReturn(2);
+
+        // ✅ Real util with mocked props
+        RewardCalculatorUtil util = new RewardCalculatorUtil(props);
+
+        // ✅ Inject into service
+        service = new RewardServiceImpl(repository, util);
+    }
+
+    @Test
+    void testCalculateRewards() {
+
+        List<TransactionEntity> mockData = List.of(
                 create("C1", 120, "2026-01-10"),
                 create("C1", 75, "2026-01-15"),
                 create("C2", 200, "2026-02-01")
         );
 
-        List<RewardResponse> result = service.calculateRewards(transactions);
+        // ✅ Mock repository response
+        when(repository.findByDateBetween(any(), any()))
+                .thenReturn(mockData);
+
+        List<RewardResponse> result =
+                service.calculateRewards(
+                        LocalDate.parse("2026-01-01"),
+                        LocalDate.parse("2026-03-31")
+                );
 
         assertEquals(2, result.size());
     }
 
     @Test
-    void testEmptyTransactions() {
-        assertTrue(service.calculateRewards(List.of()).isEmpty());
+    void testEmptyResult() {
+
+        when(repository.findByDateBetween(any(), any()))
+                .thenReturn(List.of());
+
+        List<RewardResponse> result =
+                service.calculateRewards(
+                        LocalDate.now(),
+                        LocalDate.now()
+                );
+
+        assertTrue(result.isEmpty());
     }
 
     @Test
-    void testInvalidCustomer() {
-        Transaction t = new Transaction();
-        t.setAmount(100);
-        t.setDate(LocalDate.now());
+    void testNegativeAmount() {
+
+        List<TransactionEntity> mockData = List.of(
+                create("C1", -10, "2026-01-10")
+        );
+
+        when(repository.findByDateBetween(any(), any()))
+                .thenReturn(mockData);
 
         assertThrows(RuntimeException.class,
-                () -> service.calculateRewards(List.of(t)));
+                () -> service.calculateRewards(
+                        LocalDate.now(),
+                        LocalDate.now()
+                ));
     }
 
-    private Transaction create(String c, double amt, String date) {
-        Transaction t = new Transaction();
-        t.setCustomerId(c);
-        t.setAmount(amt);
-        t.setDate(LocalDate.parse(date));
-        return t;
+    private TransactionEntity create(String c, double amt, String date) {
+        return new TransactionEntity(
+                null,
+                c,
+                amt,
+                LocalDate.parse(date)
+        );
     }
 }
