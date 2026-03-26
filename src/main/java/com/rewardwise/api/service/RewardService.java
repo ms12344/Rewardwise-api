@@ -17,7 +17,6 @@ public interface RewardService {
      * @param transactions list of transactions
      * @return list of reward responses
      */
- //   List<RewardResponse> calculateRewards(List<Transaction> transactions);
 
 	List<RewardResponse> calculateRewards(LocalDate parse, LocalDate parse2);
 }

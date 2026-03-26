@@ -45,18 +45,5 @@ public class RewardIntegrationTests {
 
         assertThat(response).isNotNull();
     }
-    
-	/*
-	 * @Test void testAPI1() throws Exception {
-	 * 
-	 * when(service.calculateRewards(Mockito.any(), Mockito.any()))
-	 * .thenReturn(List.of());
-	 * 
-	 * String json = """ [ {"customerId":"C1","amount":120,"date":"2026-01-10"} ]
-	 * """;
-	 * 
-	 * mockMvc.perform(post("/api/rewards") .contentType("application/json")
-	 * .content(json)) .andExpect(status().isOk()); }
-	 */
-    
+      
 }

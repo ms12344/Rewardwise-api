@@ -28,8 +28,4 @@ public class RewardController {
                 LocalDate.parse(endDate)
         );
     }
-//    @PostMapping
-//    public List<RewardResponse> calculate(@RequestBody List<Transaction> transactions) {
-//        return service.calculateRewards(transactions);
-//    }
 }
